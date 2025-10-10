@@ -3,9 +3,9 @@ import 'dart:math';
 
 import 'package:custom_interactive_viewer/custom_interactive_viewer.dart';
 import 'package:flutter/material.dart';
+import 'package:org_chart/src/base/base_controller.dart';
 import 'package:org_chart/src/base/edge_painter_utils.dart';
 import 'package:org_chart/src/common/node.dart';
-import 'package:org_chart/src/base/base_controller.dart';
 import 'package:org_chart/src/common/node_builder_details.dart';
 
 /// Base abstract graph widget that provides common functionality for all graph types
@@ -166,11 +166,14 @@ abstract class BaseGraphState<E, T extends BaseGraph<E>> extends State<T> {
     setState(() {});
   }
 
-  void updateDragging(Node<E> node, DragUpdateDetails details) {
+  void updateDragging(Node<E> node, DragUpdateDetails details,
+      {bool dragHorizontally = false}) {
     // Update position immediately for smooth visual feedback
     node.position = Offset(
       max(0, node.position.dx + details.delta.dx),
-      max(0, node.position.dy + details.delta.dy),
+      dragHorizontally
+          ? node.position.dy
+          : max(0, node.position.dy + details.delta.dy),
     );
 
     // Calculate overlapping immediately for real-time visual feedback

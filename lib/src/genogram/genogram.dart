@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:org_chart/src/base/base_graph.dart';
 import 'package:org_chart/src/common/custom_animated_positioned.dart';
-import 'package:org_chart/src/genogram/genogram_enums.dart';
 import 'package:org_chart/src/common/node.dart';
 import 'package:org_chart/src/common/node_builder_details.dart';
-import 'package:org_chart/src/genogram/genogram_controller.dart';
-import 'package:org_chart/src/base/base_graph.dart';
 import 'package:org_chart/src/genogram/edge_painter.dart';
+import 'package:org_chart/src/genogram/genogram_controller.dart';
 import 'package:org_chart/src/genogram/genogram_edge_config.dart';
+import 'package:org_chart/src/genogram/genogram_enums.dart';
 
 /// A widget that displays an organizational chart
 class Genogram<E> extends BaseGraph<E> {
@@ -17,6 +17,9 @@ class Genogram<E> extends BaseGraph<E> {
 
   /// Function to determine marriage status between two people
   final MarriageStatus Function(E person, E spouse)? marriageStatusProvider;
+
+  /// Set draggable horizontally only
+  final bool horizontalDragOnly;
 
   Genogram({
     super.key,
@@ -40,6 +43,7 @@ class Genogram<E> extends BaseGraph<E> {
     this.edgeConfig = const GenogramEdgeConfig(),
     this.marriageStatusProvider,
     this.onDrop,
+    this.horizontalDragOnly = false,
   });
 
   @override
@@ -48,6 +52,7 @@ class Genogram<E> extends BaseGraph<E> {
 
 class GenogramState<E> extends BaseGraphState<E, Genogram<E>> {
   late GenogramEdgePainter<E> _edgePainter;
+
   @override
   void initState() {
     super.initState();
@@ -121,7 +126,8 @@ class GenogramState<E> extends BaseGraphState<E, Genogram<E>> {
                 onPanStart:
                     widget.isDraggable ? (_) => startDragging(node) : null,
                 onPanUpdate: widget.isDraggable
-                    ? (details) => updateDragging(node, details)
+                    ? (details) => updateDragging(node, details,
+                        dragHorizontally: widget.horizontalDragOnly)
                     : null,
                 onPanEnd:
                     widget.isDraggable ? (_) => finishDragging(node) : null,
