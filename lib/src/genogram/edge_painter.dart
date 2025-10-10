@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:org_chart/src/base/edge_painter_utils.dart';
-import 'package:org_chart/src/genogram/genogram_enums.dart';
-import 'package:org_chart/src/common/node.dart';
 import 'package:org_chart/src/base/base_controller.dart';
+import 'package:org_chart/src/base/edge_painter_utils.dart';
+import 'package:org_chart/src/common/node.dart';
 import 'package:org_chart/src/genogram/genogram_controller.dart';
 import 'package:org_chart/src/genogram/genogram_edge_config.dart';
+import 'package:org_chart/src/genogram/genogram_enums.dart';
 
 /// Connection points on a node
 enum ConnectionPoint {
@@ -257,7 +257,7 @@ class GenogramEdgePainter<E> extends CustomPainter {
     final Offset childConn = _getConnectionPoint(child, ConnectionPoint.top);
 
     final connectionType =
-        isMarriedFemale ? ConnectionType.twoSegment : ConnectionType.direct;
+        isMarriedFemale ? ConnectionType.twoSegment : ConnectionType.twoSegment;
 
     utils.drawConnection(canvas, parentConn, childConn, controller.boxSize,
         controller.orientation,
