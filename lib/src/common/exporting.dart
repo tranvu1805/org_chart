@@ -1,7 +1,8 @@
 import 'dart:ui' as ui;
+
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/rendering.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 // This function runs in an isolate to decode the PNG bytes
@@ -10,11 +11,22 @@ Future<Uint8List> _encodePngInIsolate(ByteData byteData) async {
 }
 
 // This function runs in an isolate to create a PDF from image bytes
-Future<pw.Document> _createPdfInIsolate(Uint8List imageBytes) async {
+Future<pw.Document> _createPdfInIsolate(Map<String, dynamic> data) async {
+  final imageBytes = data['imageBytes'] as Uint8List;
+  final width = data['width'] as double;
+  final height = data['height'] as double;
+
   final image = pw.MemoryImage(imageBytes);
   final pdf = pw.Document();
+
+  // Determine orientation based on dimensions
+  final isLandscape = width > height;
+
   pdf.addPage(
     pw.Page(
+      orientation: isLandscape
+          ? pw.PageOrientation.landscape
+          : pw.PageOrientation.portrait,
       build: (pw.Context context) {
         return pw.Center(
           child: pw.Image(image),
@@ -54,13 +66,21 @@ Future<pw.Document?> exportChartAsPdf(GlobalKey key,
     {double pixelRatio = 3.0}) async {
   try {
     // 1. First get the image bytes
+    RenderRepaintBoundary boundary =
+        key.currentContext!.findRenderObject() as RenderRepaintBoundary;
+    final size = boundary.size;
+
     final bytes = await exportChartAsImage(key, pixelRatio: pixelRatio);
     if (bytes == null) {
       throw Exception("Failed to export chart image");
     }
 
     // 2. Create the PDF in an isolate to avoid blocking the UI
-    return await compute(_createPdfInIsolate, bytes);
+    return await compute(_createPdfInIsolate, {
+      'imageBytes': bytes,
+      'width': size.width,
+      'height': size.height,
+    });
   } catch (e) {
     debugPrint("Error exporting chart as PDF: $e");
     return null;
