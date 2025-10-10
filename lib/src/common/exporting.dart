@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 // This function runs in an isolate to decode the PNG bytes
@@ -24,6 +25,7 @@ Future<pw.Document> _createPdfInIsolate(Map<String, dynamic> data) async {
 
   pdf.addPage(
     pw.Page(
+      pageFormat: PdfPageFormat.a3,
       orientation: isLandscape
           ? pw.PageOrientation.landscape
           : pw.PageOrientation.portrait,
