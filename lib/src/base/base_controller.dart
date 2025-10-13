@@ -129,11 +129,11 @@ abstract class BaseGraphController<E> {
         x = data.x?.toDouble();
         y = data.y?.toDouble();
       } catch (_) {}
-
-      return Node(
+      final node = Node(
         data: e,
         position: (x != null && y != null) ? Offset(x, y) : Offset.zero,
       );
+      return node;
     }).toList();
     if (recalculatePosition) {
       calculatePosition(center: centerGraph);
