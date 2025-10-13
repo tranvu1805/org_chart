@@ -2,9 +2,9 @@ import 'dart:typed_data';
 
 import 'package:custom_interactive_viewer/custom_interactive_viewer.dart';
 import 'package:flutter/material.dart';
-import 'package:org_chart/src/common/node.dart';
-import 'package:org_chart/src/common/exporting.dart';
 import 'package:org_chart/src/base/base_graph_constants.dart';
+import 'package:org_chart/src/common/exporting.dart';
+import 'package:org_chart/src/common/node.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 /// The orientation of the organizational chart
@@ -67,6 +67,7 @@ abstract class BaseGraphController<E> {
   List<Node<E>> get nodes => _nodes;
 
   List<Node<E>> get roots;
+
   List<E> get items => nodes.map((e) => e.data).toList();
 
   // Common getters and setters
@@ -120,7 +121,17 @@ abstract class BaseGraphController<E> {
   /// This is more efficient than clearing and adding items separately
   void replaceAll(List<E> items,
       {bool recalculatePosition = true, bool centerGraph = false}) {
-    _nodes = items.map((e) => Node(data: e)).toList();
+    _nodes = items.map((e) {
+      final node = Node(data: e);
+      try {
+        final x = (e as dynamic).x;
+        final y = (e as dynamic).y;
+        if (x != null && y != null) {
+          node.position = Offset(x.toDouble(), y.toDouble());
+        }
+      } catch (_) {}
+      return node;
+    }).toList();
     if (recalculatePosition) {
       calculatePosition(center: centerGraph);
     }
