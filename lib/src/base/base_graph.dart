@@ -103,9 +103,6 @@ abstract class BaseGraphState<E, T extends BaseGraph<E>> extends State<T> {
 
   @override
   void dispose() {
-    try {
-      viewerController.reset();
-    } catch (_) {}
     if (widget.viewerController == null) {
       viewerController.dispose();
     }
