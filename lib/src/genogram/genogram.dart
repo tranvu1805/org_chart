@@ -69,7 +69,8 @@ class GenogramState<E> extends BaseGraphState<E, Genogram<E>> {
 
   @override
   void dispose() {
-    widget.controller.viewerController?.dispose();
+    // Stop any animations before disposal
+    widget.viewerController?.dispose();
     super.dispose();
   }
 
