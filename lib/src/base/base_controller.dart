@@ -122,15 +122,18 @@ abstract class BaseGraphController<E> {
   void replaceAll(List<E> items,
       {bool recalculatePosition = true, bool centerGraph = false}) {
     _nodes = items.map((e) {
-      final node = Node(data: e);
+      double? x;
+      double? y;
       try {
-        final x = (e as dynamic).x;
-        final y = (e as dynamic).y;
-        if (x != null && y != null) {
-          node.position = Offset(x.toDouble(), y.toDouble());
-        }
+        final data = e as dynamic;
+        x = data.x?.toDouble();
+        y = data.y?.toDouble();
       } catch (_) {}
-      return node;
+
+      return Node(
+        data: e,
+        position: (x != null && y != null) ? Offset(x, y) : Offset.zero,
+      );
     }).toList();
     if (recalculatePosition) {
       calculatePosition(center: centerGraph);
