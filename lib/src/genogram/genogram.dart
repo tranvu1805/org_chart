@@ -68,14 +68,6 @@ class GenogramState<E> extends BaseGraphState<E, Genogram<E>> {
   }
 
   @override
-  void dispose() {
-    if (widget.viewerController == null) {
-      viewerController.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
   List<Widget> buildGraphElements(BuildContext context) {
     return [
       buildEdges(),
