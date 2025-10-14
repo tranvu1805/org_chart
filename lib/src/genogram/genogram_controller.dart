@@ -96,6 +96,51 @@ class GenogramController<E> extends BaseGraphController<E> {
     _spousesCache.clear();
   }
 
+  void removeItemKeepChildren(E item,
+      {bool recalculatePosition = true, bool centerGraph = false}) {
+    final itemId = idProvider(item);
+    nodes.removeWhere((n) => idProvider(n.data) == itemId);
+
+    if (recalculatePosition) {
+      calculatePosition(center: centerGraph);
+    }
+  }
+
+  void removeItem(E item,
+      {bool recalculatePosition = true, bool centerGraph = false}) {
+    final itemId = idProvider(item);
+
+    // Xác định tất cả các node cần xoá (node này + con cháu)
+    final toRemove = <Node<E>>[];
+
+    void collectDescendants(String id) {
+      for (final node in nodes) {
+        final data = node.data;
+        final f = fatherProvider(data);
+        final m = motherProvider(data);
+        if (f == id || m == id) {
+          toRemove.add(node);
+          collectDescendants(idProvider(data));
+        }
+      }
+    }
+
+    // Node chính
+    final node = nodes.firstWhere(
+      (n) => idProvider(n.data) == itemId,
+      orElse: () => Node(data: item),
+    );
+    toRemove.add(node);
+    collectDescendants(itemId);
+
+    // Xoá khỏi danh sách nodes
+    nodes.removeWhere((n) => toRemove.contains(n));
+
+    if (recalculatePosition) {
+      calculatePosition(center: centerGraph);
+    }
+  }
+
   @override
   void replaceAll(List<E> items,
       {bool recalculatePosition = true, bool centerGraph = false}) {
@@ -494,151 +539,6 @@ class GenogramController<E> extends BaseGraphController<E> {
     if (center) {
       centerGraph?.call();
     }
-  }
-
-  void calculateSubtreePosition(E parentData, {bool isAddSpouse = false}) {
-    final parentNode = nodes.firstWhere(
-      (n) => idProvider(n.data) == idProvider(parentData),
-      orElse: () => Node(data: parentData),
-    );
-
-    if (parentNode.position == Offset.zero) return;
-
-    final Set<Node<E>> laidOut = <Node<E>>{};
-
-    List<Node<E>> getChildrenForGroup(List<Node<E>> parents) {
-      final parentIds = parents.map((p) => idProvider(p.data)).toSet();
-      return nodes.where((child) {
-        final fatherId = fatherProvider(child.data);
-        final motherId = motherProvider(child.data);
-        if (parentIds.contains(idProvider(child.data))) return false;
-        if (parents.any((p) => getSpouseList(p.data).contains(child)))
-          return false;
-        return parentIds.contains(fatherId) || parentIds.contains(motherId);
-      }).toList();
-    }
-
-    void shiftSubtree(Node<E> node, double dx, double dy) {
-      if (dx == 0 && dy == 0) return;
-      final Set<Node<E>> visited = <Node<E>>{};
-      void shift0(Node<E> n) {
-        if (visited.contains(n)) return;
-        visited.add(n);
-        n.position = Offset(n.position.dx + dx, n.position.dy + dy);
-        for (final s in getSpouseList(n.data)) {
-          if (!visited.contains(s)) {
-            s.position = Offset(s.position.dx + dx, s.position.dy + dy);
-            visited.add(s);
-          }
-        }
-        for (final c in getChildrenForGroup([n])) {
-          shift0(c);
-        }
-      }
-
-      shift0(node);
-    }
-
-    double layoutFamily(Node<E> node, double x, double y, int level) {
-      if (laidOut.contains(node)) return 0;
-      laidOut.add(node);
-
-      final List<Node<E>> coupleGroup = <Node<E>>[];
-      if (isMale(node.data)) {
-        coupleGroup.add(node);
-        final spouses = getSpouseList(node.data);
-        coupleGroup.addAll(spouses);
-        laidOut.addAll(spouses);
-      } else {
-        coupleGroup.add(node);
-      }
-
-      final int groupCount = coupleGroup.length;
-      final double groupSize = groupCount *
-              (orientation == GraphOrientation.topToBottom
-                  ? boxSize.width
-                  : boxSize.height) +
-          (groupCount - 1) * spacing;
-
-      for (int i = 0; i < groupCount; i++) {
-        final offset = i *
-            (orientation == GraphOrientation.topToBottom
-                ? boxSize.width + spacing
-                : boxSize.height + spacing);
-        if (orientation == GraphOrientation.topToBottom) {
-          coupleGroup[i].position = Offset(x + offset, y);
-        } else {
-          coupleGroup[i].position = Offset(x, y + offset);
-        }
-      }
-
-      if (isAddSpouse) return groupSize;
-
-      final children = getChildrenForGroup(coupleGroup)
-          .where((child) => !laidOut.contains(child))
-          .toList();
-
-      sortChildrenBySiblingGroups(children, coupleGroup);
-      if (children.isEmpty) return groupSize;
-
-      // 👇 điểm bắt đầu cho con nằm bên dưới cha (không dịch cha mẹ)
-      final double childBaseX = orientation == GraphOrientation.topToBottom
-          ? x
-          : x + boxSize.width + runSpacing;
-      final double childBaseY = orientation == GraphOrientation.topToBottom
-          ? y + boxSize.height + runSpacing
-          : y;
-
-      double childPos =
-          orientation == GraphOrientation.topToBottom ? childBaseX : childBaseY;
-      double totalSize = 0;
-
-      final double firstChildStart = childPos;
-      final List<Node<E>> placedChildren = [];
-
-      for (final child in children) {
-        final double subtreeSize = orientation == GraphOrientation.topToBottom
-            ? layoutFamily(child, childPos, childBaseY, level + 1)
-            : layoutFamily(child, childBaseX, childPos, level + 1);
-        placedChildren.add(child);
-        totalSize += subtreeSize;
-        childPos += subtreeSize + spacing * 1.5;
-      }
-
-      final double trueChildrenSize =
-          placedChildren.isNotEmpty ? (totalSize - spacing * 0.5) : 0;
-
-      if (trueChildrenSize > groupSize) {
-        final double parentCenter = orientation == GraphOrientation.topToBottom
-            ? x + groupSize / 2
-            : y + groupSize / 2;
-        final double childrenCenter =
-            orientation == GraphOrientation.topToBottom
-                ? firstChildStart + trueChildrenSize / 2
-                : firstChildStart + trueChildrenSize / 2;
-        final double shift = parentCenter - childrenCenter;
-
-        for (final child in placedChildren) {
-          shiftSubtree(
-            child,
-            orientation == GraphOrientation.topToBottom ? shift : 0,
-            orientation == GraphOrientation.topToBottom ? 0 : shift,
-          );
-        }
-      }
-
-      return max(groupSize, trueChildrenSize);
-    }
-
-    // 🔥 Gọi layout KHÔNG cộng thêm khoảng cách ở đây nữa
-    layoutFamily(
-      parentNode,
-      parentNode.position.dx,
-      parentNode.position.dy,
-      0,
-    );
-
-    setState?.call(() {});
   }
 
   /// Sorts children by sibling groups to keep children of the same parents together
