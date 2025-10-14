@@ -97,6 +97,30 @@ abstract class BaseGraphController<E> {
     }
   }
 
+  void updateItem(E item,
+      {bool recalculatePosition = true, bool centerGraph = false}) {
+    final itemId = idProvider(item);
+    final existingIndex =
+        nodes.indexWhere((node) => idProvider(node.data) == itemId);
+
+    if (existingIndex != -1) {
+      // 🟢 Giữ nguyên vị trí cũ
+      final oldNode = nodes[existingIndex];
+      nodes[existingIndex] = Node(
+        data: item,
+        position: oldNode.position,
+        hideNodes: oldNode.hideNodes,
+      );
+    } else {
+      // Thêm node mới
+      nodes.add(Node(data: item));
+    }
+
+    if (recalculatePosition) {
+      calculatePosition(center: centerGraph);
+    }
+  }
+
   /// Adds multiple items to the chart
   /// Items with existing IDs will replace the old ones
   void addItems(List<E> items,
