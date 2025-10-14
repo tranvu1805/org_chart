@@ -140,6 +140,14 @@ abstract class BaseGraphController<E> {
   /// This is more efficient than clearing and adding items separately
   void replaceAll(List<E> items,
       {bool recalculatePosition = true, bool centerGraph = false}) {
+    _nodes = items.map((e) => Node(data: e)).toList();
+    if (recalculatePosition) {
+      calculatePosition(center: centerGraph);
+    }
+  }
+
+  void replaceAllAndKeepOffset(List<E> items,
+      {bool recalculatePosition = true, bool centerGraph = false}) {
     _nodes = items.map((e) {
       double? x;
       double? y;
