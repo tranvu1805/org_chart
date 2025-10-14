@@ -496,34 +496,50 @@ class GenogramController<E> extends BaseGraphController<E> {
     }
   }
 
-  void calculateSubtreePosition(E parentData) {
+  void calculateSubtreePosition(E parentData, {bool isAddSpouse = false}) {
     final parentNode = nodes.firstWhere(
       (n) => idProvider(n.data) == idProvider(parentData),
       orElse: () => Node(data: parentData),
     );
 
+    // Nếu parent chưa có vị trí → bỏ qua
     if (parentNode.position == Offset.zero) return;
 
     final Set<Node<E>> laidOut = <Node<E>>{};
 
+    /// 🔹 Lấy danh sách con trực tiếp (bỏ qua spouse, bỏ qua node cùng cấp)
     List<Node<E>> getChildrenForGroup(List<Node<E>> parents) {
       final parentIds = parents.map((p) => idProvider(p.data)).toSet();
-      return nodes
-          .where((child) =>
-              parentIds.contains(fatherProvider(child.data)) ||
-              parentIds.contains(motherProvider(child.data)))
-          .toList();
+
+      return nodes.where((child) {
+        final fatherId = fatherProvider(child.data);
+        final motherId = motherProvider(child.data);
+
+        // Bỏ qua nếu child chính là parent hoặc là spouse của parent
+        if (parentIds.contains(idProvider(child.data))) return false;
+        if (parents.any((p) => getSpouseList(p.data).contains(child)))
+          return false;
+
+        // Chỉ lấy con trực tiếp của nhóm cha mẹ hiện tại
+        final isChild =
+            parentIds.contains(fatherId) || parentIds.contains(motherId);
+
+        return isChild;
+      }).toList();
     }
 
-    // shift node and all its descendants by dx,dy
+    /// 🔹 Dịch chuyển toàn bộ subtree theo (dx, dy)
     void shiftSubtree(Node<E> node, double dx, double dy) {
       if (dx == 0 && dy == 0) return;
       final Set<Node<E>> visited = <Node<E>>{};
+
       void shift0(Node<E> n) {
         if (visited.contains(n)) return;
         visited.add(n);
+
         n.position = Offset(n.position.dx + dx, n.position.dy + dy);
-        // shift spouses too (they are part of same couple group)
+
+        // Dịch chuyển spouse cùng nhóm
         final spouses = getSpouseList(n.data);
         for (final s in spouses) {
           if (!visited.contains(s)) {
@@ -531,7 +547,8 @@ class GenogramController<E> extends BaseGraphController<E> {
             visited.add(s);
           }
         }
-        // shift children recursively
+
+        // Dịch chuyển con đệ quy
         final children = getChildrenForGroup([n]);
         for (final c in children) {
           shift0(c);
@@ -541,12 +558,12 @@ class GenogramController<E> extends BaseGraphController<E> {
       shift0(node);
     }
 
-    // layout family returns the size (width or height) of this subtree
+    /// 🔹 Hàm chính layout lại subtree
     double layoutFamily(Node<E> node, double x, double y, int level) {
       if (laidOut.contains(node)) return 0;
-      // mark but we'll position parents at given x,y (keep parent fixed when initial call)
       laidOut.add(node);
 
+      // Gom nhóm vợ chồng (couple group)
       final List<Node<E>> coupleGroup = <Node<E>>[];
       if (isMale(node.data)) {
         coupleGroup.add(node);
@@ -554,10 +571,10 @@ class GenogramController<E> extends BaseGraphController<E> {
         coupleGroup.addAll(spouses);
         laidOut.addAll(spouses);
       } else {
-        // if female who will be placed with husband later we still place her standalone here
         coupleGroup.add(node);
       }
 
+      // Kích thước nhóm cha mẹ
       final int groupCount = coupleGroup.length;
       final double groupSize = groupCount *
               (orientation == GraphOrientation.topToBottom
@@ -565,12 +582,13 @@ class GenogramController<E> extends BaseGraphController<E> {
                   : boxSize.height) +
           (groupCount - 1) * spacing;
 
-      // place parents at (x,y) (do NOT shift them here)
+      // Đặt vị trí cha mẹ (không shift nếu là node gốc)
       for (int i = 0; i < groupCount; i++) {
         final offset = i *
             (orientation == GraphOrientation.topToBottom
                 ? boxSize.width + spacing
                 : boxSize.height + spacing);
+
         if (orientation == GraphOrientation.topToBottom) {
           coupleGroup[i].position = Offset(x + offset, y);
         } else {
@@ -578,16 +596,17 @@ class GenogramController<E> extends BaseGraphController<E> {
         }
       }
 
-      // children that are not yet laid out
+      // Nếu chỉ thêm spouse thì dừng ở đây (không layout con)
+      if (isAddSpouse) return groupSize;
+
+      // Lấy danh sách con chưa layout
       final children = getChildrenForGroup(coupleGroup)
           .where((child) => !laidOut.contains(child))
           .toList();
 
       sortChildrenBySiblingGroups(children, coupleGroup);
 
-      if (children.isEmpty) {
-        return groupSize;
-      }
+      if (children.isEmpty) return groupSize;
 
       final double childDistance = orientation == GraphOrientation.topToBottom
           ? boxSize.height + runSpacing
@@ -602,10 +621,10 @@ class GenogramController<E> extends BaseGraphController<E> {
           orientation == GraphOrientation.topToBottom ? childrenX : childrenY;
       double totalSize = 0;
 
-      // store the start pos of first child for centering later
       final double firstChildStart = childPos;
       final List<Node<E>> placedChildren = [];
 
+      // Layout từng child
       for (final child in children) {
         final double subtreeSize = orientation == GraphOrientation.topToBottom
             ? layoutFamily(child, childPos, childrenY, level + 1)
@@ -618,41 +637,37 @@ class GenogramController<E> extends BaseGraphController<E> {
       final double trueChildrenSize =
           placedChildren.isNotEmpty ? (totalSize - spacing * 0.5) : 0;
 
-      // center children group under parent group WITHOUT moving parent:
+      // 🔹 Căn giữa nhóm con dưới cha mẹ (không di chuyển cha mẹ)
       if (trueChildrenSize > groupSize) {
-        // compute parent center
-        double parentCenter = orientation == GraphOrientation.topToBottom
+        final double parentCenter = orientation == GraphOrientation.topToBottom
             ? x + groupSize / 2
             : y + groupSize / 2;
-        // compute children center (current)
-        double childrenCenter = orientation == GraphOrientation.topToBottom
-            ? firstChildStart + trueChildrenSize / 2
-            : firstChildStart + trueChildrenSize / 2;
+        final double childrenCenter =
+            orientation == GraphOrientation.topToBottom
+                ? firstChildStart + trueChildrenSize / 2
+                : firstChildStart + trueChildrenSize / 2;
 
-        // shift needed to align children center under parent center
         final double shift = parentCenter - childrenCenter;
 
-        // apply shift to each child subtree (so parents remain fixed)
         for (final child in placedChildren) {
           shiftSubtree(
-              child,
-              orientation == GraphOrientation.topToBottom ? shift : 0,
-              orientation == GraphOrientation.topToBottom ? 0 : shift);
+            child,
+            orientation == GraphOrientation.topToBottom ? shift : 0,
+            orientation == GraphOrientation.topToBottom ? 0 : shift,
+          );
         }
       }
 
       return max(groupSize, trueChildrenSize);
     }
 
-    // START: call layout with parent's current position (do NOT offset parent down)
-    // Parent stays at its current position; children will be laid out beneath/after it.
-    final double startX = parentNode.position.dx;
-    final double startY = parentNode.position.dy;
-    if (orientation == GraphOrientation.topToBottom) {
-      layoutFamily(parentNode, startX, startY, 0);
-    } else {
-      layoutFamily(parentNode, startX, startY, 0);
-    }
+    // Gọi layout bắt đầu từ node cha (không di chuyển cha mẹ)
+    layoutFamily(
+      parentNode,
+      parentNode.position.dx,
+      parentNode.position.dy + boxSize.height + runSpacing,
+      0,
+    );
 
     setState?.call(() {});
   }
