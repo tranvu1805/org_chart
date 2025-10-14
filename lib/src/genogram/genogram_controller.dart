@@ -1,9 +1,9 @@
-import 'dart:math';
 import 'dart:collection';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:org_chart/src/common/node.dart';
 import 'package:org_chart/src/base/base_controller.dart';
+import 'package:org_chart/src/common/node.dart';
 import 'package:org_chart/src/genogram/genogram_constants.dart';
 
 /// Controller responsible for managing and laying out genogram (family tree) charts
@@ -494,6 +494,106 @@ class GenogramController<E> extends BaseGraphController<E> {
     if (center) {
       centerGraph?.call();
     }
+  }
+
+  void calculateSubtreePosition(E parentData) {
+    // Nếu không tìm thấy parent thì không làm gì
+    final parentNode = nodes.firstWhere(
+      (n) => idProvider(n.data) == idProvider(parentData),
+      orElse: () => Node(data: parentData),
+    );
+
+    // Nếu parent chưa có vị trí, bỏ qua
+    if (parentNode.position == Offset.zero) return;
+
+    // Cache clearing nhỏ cho subtree
+    final Set<Node<E>> laidOut = <Node<E>>{};
+    final Map<int, double> levelEdges = {};
+    final double minPos = spacing * 2;
+
+    List<Node<E>> getChildrenForGroup(List<Node<E>> parents) {
+      final parentIds = parents.map((p) => idProvider(p.data)).toSet();
+      return nodes
+          .where((child) =>
+              parentIds.contains(fatherProvider(child.data)) ||
+              parentIds.contains(motherProvider(child.data)))
+          .toList();
+    }
+
+    double layoutFamily(Node<E> node, double x, double y, int level) {
+      if (laidOut.contains(node)) return 0;
+      laidOut.add(node);
+
+      final List<Node<E>> coupleGroup = <Node<E>>[];
+      if (isMale(node.data)) {
+        coupleGroup.add(node);
+        final spouses = getSpouseList(node.data);
+        coupleGroup.addAll(spouses);
+        laidOut.addAll(spouses);
+      } else {
+        coupleGroup.add(node);
+      }
+
+      final int groupCount = coupleGroup.length;
+      final double groupSize = groupCount *
+              (orientation == GraphOrientation.topToBottom
+                  ? boxSize.width
+                  : boxSize.height) +
+          (groupCount - 1) * spacing;
+
+      for (int i = 0; i < groupCount; i++) {
+        final offset = i *
+            (orientation == GraphOrientation.topToBottom
+                ? boxSize.width + spacing
+                : boxSize.height + spacing);
+        if (orientation == GraphOrientation.topToBottom) {
+          coupleGroup[i].position = Offset(x + offset, y);
+        } else {
+          coupleGroup[i].position = Offset(x, y + offset);
+        }
+      }
+
+      final children = getChildrenForGroup(coupleGroup)
+          .where((child) => !laidOut.contains(child))
+          .toList();
+
+      sortChildrenBySiblingGroups(children, coupleGroup);
+
+      if (children.isEmpty) return groupSize;
+
+      final double childDistance = orientation == GraphOrientation.topToBottom
+          ? boxSize.height + runSpacing
+          : boxSize.width + runSpacing;
+
+      final double childrenX =
+          orientation == GraphOrientation.topToBottom ? x : x + childDistance;
+      final double childrenY =
+          orientation == GraphOrientation.topToBottom ? y + childDistance : y;
+
+      double childPos =
+          orientation == GraphOrientation.topToBottom ? childrenX : childrenY;
+      double totalSize = 0;
+
+      for (final child in children) {
+        final double subtreeSize = orientation == GraphOrientation.topToBottom
+            ? layoutFamily(child, childPos, childrenY, level + 1)
+            : layoutFamily(child, childrenX, childPos, level + 1);
+        totalSize += subtreeSize;
+        childPos += subtreeSize + spacing * 1.5;
+      }
+
+      return max(groupSize, totalSize);
+    }
+
+    // Gọi layout cho subtree, bắt đầu từ cha
+    layoutFamily(
+      parentNode,
+      parentNode.position.dx,
+      parentNode.position.dy + boxSize.height + runSpacing,
+      0,
+    );
+
+    setState?.call(() {});
   }
 
   /// Sorts children by sibling groups to keep children of the same parents together
