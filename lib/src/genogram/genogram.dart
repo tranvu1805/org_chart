@@ -128,25 +128,22 @@ class GenogramState<E> extends BaseGraphState<E, Genogram<E>> {
               maintainState: true,
               child: GestureDetector(
                 onTapDown: handleTapDown,
-                onLongPress: () => showNodeMenu(context, node),
-                onPanStart:
-                    widget.isDraggable ? (_) => startDragging(node) : null,
+                onTap: () => showNodeMenu(context, node),
+                onPanStart: widget.isDraggable ? (_) => startDragging(node) : null,
                 onPanUpdate: widget.isDraggable
-                    ? (details) => updateDragging(node, details,
-                        dragHorizontally: widget.horizontalDragOnly)
+                    ? (details) =>
+                        updateDragging(node, details, dragHorizontally: widget.horizontalDragOnly)
                     : null,
-                onPanEnd:
-                    widget.isDraggable ? (_) => finishDragging(node) : null,
+                onPanEnd: widget.isDraggable ? (_) => finishDragging(node) : null,
                 child: widget.builder(
                   NodeBuilderDetails(
                     item: node.data,
                     level: level,
-                    hideNodes: ({hide, center = true}) =>
-                        toggleHideNodes(node, hide, center),
+                    hideNodes: ({hide, center = true}) => toggleHideNodes(node, hide, center),
                     nodesHidden: node.hideNodes,
                     isBeingDragged: nodeId == draggedID,
-                    isOverlapped: overlappingNodes.isNotEmpty &&
-                        overlappingNodes.first.data == node.data,
+                    isOverlapped:
+                        overlappingNodes.isNotEmpty && overlappingNodes.first.data == node.data,
                   ),
                 ),
               ),
@@ -160,6 +157,5 @@ class GenogramState<E> extends BaseGraphState<E, Genogram<E>> {
   }
 
   @override
-  GenogramController<E> get controller =>
-      widget.controller as GenogramController<E>;
+  GenogramController<E> get controller => widget.controller as GenogramController<E>;
 }
