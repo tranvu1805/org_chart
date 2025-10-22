@@ -16,7 +16,9 @@ dependencies:
   flutter:
     sdk: flutter
   
-  custom_interactive_viewer: ^0.0.7
+  custom_interactive_viewer:
+    git:
+      url: https://github.com/tranvu1805/custom_interactive_viewer.git
     # path: ../custom_interactive_viewer
 
   pdf: ^3.11.3

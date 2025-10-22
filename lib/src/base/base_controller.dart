@@ -50,8 +50,7 @@ abstract class BaseGraphController<E> {
 
   BaseGraphController({
     required List<E> items,
-    this.boxSize =
-        const Size(200, 100), // Will be overridden by specific controllers
+    this.boxSize = const Size(200, 100), // Will be overridden by specific controllers
     this.spacing = 20,
     this.runSpacing = 50,
     this.orientation = GraphOrientation.topToBottom,
@@ -79,11 +78,9 @@ abstract class BaseGraphController<E> {
   /// [recalculatePosition] determines if the position is to be recalculated directly after adding
   /// you might want to add an item but not recalculate the position immediately
   /// [centerGraph] wether to center the chart after adding the item - if recalculatePosition is true
-  void addItem(E item,
-      {bool recalculatePosition = true, bool centerGraph = false}) {
+  void addItem(E item, {bool recalculatePosition = true, bool centerGraph = false}) {
     final itemId = idProvider(item);
-    final existingIndex =
-        nodes.indexWhere((node) => idProvider(node.data) == itemId);
+    final existingIndex = nodes.indexWhere((node) => idProvider(node.data) == itemId);
 
     if (existingIndex != -1) {
       // Replace existing item
@@ -97,11 +94,9 @@ abstract class BaseGraphController<E> {
     }
   }
 
-  void updateItem(E item,
-      {bool recalculatePosition = true, bool centerGraph = false}) {
+  void updateItem(E item, {bool recalculatePosition = true, bool centerGraph = false}) {
     final itemId = idProvider(item);
-    final existingIndex =
-        nodes.indexWhere((node) => idProvider(node.data) == itemId);
+    final existingIndex = nodes.indexWhere((node) => idProvider(node.data) == itemId);
 
     if (existingIndex != -1) {
       final oldNode = nodes[existingIndex];
@@ -118,8 +113,7 @@ abstract class BaseGraphController<E> {
 
   /// Adds multiple items to the chart
   /// Items with existing IDs will replace the old ones
-  void addItems(List<E> items,
-      {bool recalculatePosition = true, bool centerGraph = false}) {
+  void addItems(List<E> items, {bool recalculatePosition = true, bool centerGraph = false}) {
     for (final item in items) {
       addItem(item, recalculatePosition: false, centerGraph: false);
     }
@@ -138,8 +132,7 @@ abstract class BaseGraphController<E> {
 
   /// Replaces all items in the chart with new items
   /// This is more efficient than clearing and adding items separately
-  void replaceAll(List<E> items,
-      {bool recalculatePosition = true, bool centerGraph = false}) {
+  void replaceAll(List<E> items, {bool recalculatePosition = true, bool centerGraph = false}) {
     _nodes = items.map((e) => Node(data: e)).toList();
     if (recalculatePosition) {
       calculatePosition(center: centerGraph);
@@ -199,18 +192,15 @@ abstract class BaseGraphController<E> {
       final String nId = idProvider(n.data);
       if (nodeId != nId) {
         Offset offset = node.position - n.position;
-        if (offset.dx.abs() < boxSize.width &&
-            offset.dy.abs() < boxSize.height) {
+        if (offset.dx.abs() < boxSize.width && offset.dy.abs() < boxSize.height) {
           // Check if the node is hidden
           overlapping.add(n);
         }
       }
     }
 
-    overlapping.sort((a, b) => a
-        .distance(node)
-        .distanceSquared
-        .compareTo(b.distance(node).distanceSquared));
+    overlapping.sort(
+        (a, b) => a.distance(node).distanceSquared.compareTo(b.distance(node).distanceSquared));
 
     return overlapping;
   }

@@ -86,8 +86,7 @@ abstract class BaseGraphState<E, T extends BaseGraph<E>> extends State<T> {
   @override
   void initState() {
     super.initState();
-    viewerController =
-        widget.viewerController ?? CustomInteractiveViewerController();
+    viewerController = widget.viewerController ?? CustomInteractiveViewerController();
     _initializeController();
   }
 
@@ -166,14 +165,11 @@ abstract class BaseGraphState<E, T extends BaseGraph<E>> extends State<T> {
     setState(() {});
   }
 
-  void updateDragging(Node<E> node, DragUpdateDetails details,
-      {bool dragHorizontally = false}) {
+  void updateDragging(Node<E> node, DragUpdateDetails details, {bool dragHorizontally = false}) {
     // Update position immediately for smooth visual feedback
     node.position = Offset(
       max(0, node.position.dx + details.delta.dx),
-      dragHorizontally
-          ? node.position.dy
-          : max(0, node.position.dy + details.delta.dy),
+      dragHorizontally ? node.position.dy : max(0, node.position.dy + details.delta.dy),
     );
 
     // Calculate overlapping immediately for real-time visual feedback
@@ -190,16 +186,13 @@ abstract class BaseGraphState<E, T extends BaseGraph<E>> extends State<T> {
     final options = widget.optionsBuilder?.call(node.data) ?? [];
     if (options.isEmpty) return;
 
-    final RenderObject? overlay =
-        Overlay.of(context).context.findRenderObject();
+    final RenderObject? overlay = Overlay.of(context).context.findRenderObject();
     if (panDownPosition == null || overlay == null) return;
 
     final result = await showMenu(
       context: context,
-      position: RelativeRect.fromRect(
-          Rect.fromLTWH(panDownPosition!.dx, panDownPosition!.dy, 0, 0),
-          Rect.fromLTWH(0, 0, overlay.paintBounds.size.width,
-              overlay.paintBounds.size.height)),
+      position: RelativeRect.fromRect(Rect.fromLTWH(panDownPosition!.dx, panDownPosition!.dy, 0, 0),
+          Rect.fromLTWH(0, 0, overlay.paintBounds.size.width, overlay.paintBounds.size.height)),
       items: options,
     );
 
