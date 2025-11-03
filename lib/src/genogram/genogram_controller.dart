@@ -96,8 +96,7 @@ class GenogramController<E> extends BaseGraphController<E> {
     _spousesCache.clear();
   }
 
-  void removeItemKeepChildren(E item,
-      {bool recalculatePosition = true, bool centerGraph = false}) {
+  void removeItemKeepChildren(E item, {bool recalculatePosition = true, bool centerGraph = false}) {
     final itemId = idProvider(item);
     nodes.removeWhere((n) => idProvider(n.data) == itemId);
 
@@ -106,8 +105,7 @@ class GenogramController<E> extends BaseGraphController<E> {
     }
   }
 
-  void removeItem(E item,
-      {bool recalculatePosition = true, bool centerGraph = false}) {
+  void removeItem(E item, {bool recalculatePosition = true, bool centerGraph = false}) {
     final itemId = idProvider(item);
 
     // Xác định tất cả các node cần xoá (node này + con cháu)
@@ -142,11 +140,9 @@ class GenogramController<E> extends BaseGraphController<E> {
   }
 
   @override
-  void replaceAll(List<E> items,
-      {bool recalculatePosition = true, bool centerGraph = false}) {
+  void replaceAll(List<E> items, {bool recalculatePosition = true, bool centerGraph = false}) {
     _clearCaches();
-    super.replaceAll(items,
-        recalculatePosition: recalculatePosition, centerGraph: centerGraph);
+    super.replaceAll(items, recalculatePosition: recalculatePosition, centerGraph: centerGraph);
   }
 
   /// Identifies the root nodes of the genogram
@@ -156,9 +152,7 @@ class GenogramController<E> extends BaseGraphController<E> {
   /// These nodes will be placed at the top/left depending on orientation.
   @override
   List<Node<E>> get roots => nodes
-      .where((node) =>
-          fatherProvider(node.data) == null &&
-          motherProvider(node.data) == null)
+      .where((node) => fatherProvider(node.data) == null && motherProvider(node.data) == null)
       .toList();
 
   /// Convenience method to check if a data item represents a male
@@ -211,8 +205,7 @@ class GenogramController<E> extends BaseGraphController<E> {
     // Find nodes that match either father or mother ID
     final result = nodes
         .where((element) =>
-            idProvider(element.data) == fatherId ||
-            idProvider(element.data) == motherId)
+            idProvider(element.data) == fatherId || idProvider(element.data) == motherId)
         .toList();
 
     // Cache the result for future calls
@@ -243,8 +236,7 @@ class GenogramController<E> extends BaseGraphController<E> {
 
     // Method 1: Direct approach - get spouses listed on this person
     final spouseIds = spousesProvider(data) ?? [];
-    spouses.addAll(
-        nodes.where((node) => spouseIds.contains(idProvider(node.data))));
+    spouses.addAll(nodes.where((node) => spouseIds.contains(idProvider(node.data))));
 
     // Method 2: Reverse lookup - find nodes that list this person as their spouse
     // Using where function for better readability and performance
@@ -370,10 +362,8 @@ class GenogramController<E> extends BaseGraphController<E> {
       else {
         // Check if this woman is a spouse of a male we'll process later
         // If so, skip her as she'll be positioned with her husband
-        final bool willBeSpouseOfLaterMale = nodes
-            .where((n) => !laidOut.contains(n))
-            .where((n) => isMale(n.data))
-            .any((n) {
+        final bool willBeSpouseOfLaterMale =
+            nodes.where((n) => !laidOut.contains(n)).where((n) => isMale(n.data)).any((n) {
           final spouseIds = spousesProvider(n.data) ?? [];
           return spouseIds.contains(idProvider(node.data));
         });
@@ -392,9 +382,7 @@ class GenogramController<E> extends BaseGraphController<E> {
       // Calculate the total width or height needed for this couple group
       final int groupCount = coupleGroup.length;
       final double groupSize = groupCount *
-              (orientation == GraphOrientation.topToBottom
-                  ? boxSize.width
-                  : boxSize.height) +
+              (orientation == GraphOrientation.topToBottom ? boxSize.width : boxSize.height) +
           (groupCount - 1) * spacing;
 
       // Position each person in the couple group in a row or column depending on orientation
@@ -414,9 +402,8 @@ class GenogramController<E> extends BaseGraphController<E> {
       }
 
       // Get all children for this couple group that haven't been positioned yet
-      List<Node<E>> children = getChildrenForGroup(coupleGroup)
-          .where((child) => !laidOut.contains(child))
-          .toList();
+      List<Node<E>> children =
+          getChildrenForGroup(coupleGroup).where((child) => !laidOut.contains(child)).toList();
 
       // Sort children using the dedicated method
       sortChildrenBySiblingGroups(children, coupleGroup);
@@ -424,9 +411,8 @@ class GenogramController<E> extends BaseGraphController<E> {
       // If no children, this subtree is just the couple group with no descendants
       if (children.isEmpty) {
         // Update the edge for this level
-        levelEdges[level] = orientation == GraphOrientation.topToBottom
-            ? x + groupSize
-            : y + groupSize;
+        levelEdges[level] =
+            orientation == GraphOrientation.topToBottom ? x + groupSize : y + groupSize;
         return groupSize;
       }
 
@@ -436,16 +422,12 @@ class GenogramController<E> extends BaseGraphController<E> {
           : boxSize.width + runSpacing;
 
       // Position coordinates for children based on orientation
-      final double childrenX =
-          orientation == GraphOrientation.topToBottom ? x : x + childDistance;
+      final double childrenX = orientation == GraphOrientation.topToBottom ? x : x + childDistance;
 
-      final double childrenY =
-          orientation == GraphOrientation.topToBottom ? y + childDistance : y;
+      final double childrenY = orientation == GraphOrientation.topToBottom ? y + childDistance : y;
 
-      double childrenTotalSize =
-          0; // Track total width/height required for all children
-      double childPos =
-          orientation == GraphOrientation.topToBottom ? childrenX : childrenY;
+      double childrenTotalSize = 0; // Track total width/height required for all children
+      double childPos = orientation == GraphOrientation.topToBottom ? childrenX : childrenY;
 
       // Position each child and their descendants recursively
       for (final child in children) {
@@ -458,13 +440,12 @@ class GenogramController<E> extends BaseGraphController<E> {
         childrenTotalSize += subtreeSize;
 
         // Move the next child's position, adding extra spacing
-        childPos += subtreeSize + spacing * 1.5;
+        childPos += subtreeSize + spacing * 1;
       }
 
       // Calculate true children size by removing the extra spacing after the last child
       final double trueChildrenSize = children.isNotEmpty
-          ? childrenTotalSize -
-              spacing * 0.5 // Remove extra spacing from last child
+          ? childrenTotalSize - spacing * 0.5 // Remove extra spacing from last child
           : 0;
 
       // Center the parent couple group above/before their children to make the tree visually balanced
@@ -485,11 +466,9 @@ class GenogramController<E> extends BaseGraphController<E> {
         // Apply the shift to each parent in the couple group
         for (final parent in coupleGroup) {
           if (orientation == GraphOrientation.topToBottom) {
-            parent.position =
-                Offset(parent.position.dx + shift, parent.position.dy);
+            parent.position = Offset(parent.position.dx + shift, parent.position.dy);
           } else {
-            parent.position =
-                Offset(parent.position.dx, parent.position.dy + shift);
+            parent.position = Offset(parent.position.dx, parent.position.dy + shift);
           }
         }
       }
@@ -500,9 +479,8 @@ class GenogramController<E> extends BaseGraphController<E> {
       final totalSize = max(groupSize, trueChildrenSize);
 
       // Update the edge for this level
-      levelEdges[level] = orientation == GraphOrientation.topToBottom
-          ? x + totalSize
-          : y + totalSize;
+      levelEdges[level] =
+          orientation == GraphOrientation.topToBottom ? x + totalSize : y + totalSize;
 
       // Return the total size needed for this entire family subtree
       return totalSize;
@@ -551,12 +529,10 @@ class GenogramController<E> extends BaseGraphController<E> {
   ///
   /// [children]: List of child nodes to sort
   /// [coupleGroup]: List of parent nodes forming a family unit
-  void sortChildrenBySiblingGroups(
-      List<Node<E>> children, List<Node<E>> coupleGroup) {
+  void sortChildrenBySiblingGroups(List<Node<E>> children, List<Node<E>> coupleGroup) {
     children.sort((a, b) {
       // First, identify the husband in the couple group (if any)
-      final Node<E>? husband =
-          coupleGroup.where((node) => isMale(node.data)).firstOrNull;
+      final Node<E>? husband = coupleGroup.where((node) => isMale(node.data)).firstOrNull;
 
       if (husband != null) {
         final String husbandId = idProvider(husband.data);
