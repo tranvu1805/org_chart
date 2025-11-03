@@ -154,12 +154,15 @@ class GenogramEdgePainter<E> extends CustomPainter {
       // For additional spouses: move closer to wife (ratio > 0.5)
       double connectionRatio = spouseIndex == 0 ? 0.5 : 0.9;
 
+      ///older version:
       // Store the weighted point for child connections
       // _marriagePoints[marriageKey] = Offset(
       //     husbandOffset.dx +
       //         (wifeOffset.dx - husbandOffset.dx) * connectionRatio,
       //     husbandOffset.dy +
       //         (wifeOffset.dy - husbandOffset.dy) * connectionRatio);
+
+      // Start point from wife side with space for gap
       final gapWife = controller.spacing / 2;
       _marriagePoints[marriageKey] = Offset(wifeOffset.dx - gapWife,
           husbandOffset.dy + (wifeOffset.dy - husbandOffset.dy) * connectionRatio);
