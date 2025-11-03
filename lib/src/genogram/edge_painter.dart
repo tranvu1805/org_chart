@@ -76,7 +76,6 @@ class GenogramEdgePainter<E> extends CustomPainter {
     for (final Node<E> person in nodes) {
       final String personId = controller.idProvider(person.data);
       final List<String>? spouses = controller.spousesProvider(person.data);
-
       // Skip if no spouses
       if (spouses == null || spouses.isEmpty) continue;
 
@@ -116,13 +115,11 @@ class GenogramEdgePainter<E> extends CustomPainter {
       final Node<E> wife = marriage['wife'];
       final int spouseIndex = marriage['spouseIndex'];
       final String marriageKey = marriage['marriageKey']; // Assign color
-      final Color marriageColor =
-          config.marriageColors[i % config.marriageColors.length];
+      final Color marriageColor = config.marriageColors[i % config.marriageColors.length];
       _marriageColors[marriageKey] = marriageColor;
 
       // Get connection points
-      final Offset husbandConn =
-          _getConnectionPoint(husband, ConnectionPoint.right);
+      final Offset husbandConn = _getConnectionPoint(husband, ConnectionPoint.right);
       final Offset wifeConn = _getConnectionPoint(wife, ConnectionPoint.left);
 
       // Apply offset for multiple marriages
@@ -158,11 +155,14 @@ class GenogramEdgePainter<E> extends CustomPainter {
       double connectionRatio = spouseIndex == 0 ? 0.5 : 0.9;
 
       // Store the weighted point for child connections
-      _marriagePoints[marriageKey] = Offset(
-          husbandOffset.dx +
-              (wifeOffset.dx - husbandOffset.dx) * connectionRatio,
-          husbandOffset.dy +
-              (wifeOffset.dy - husbandOffset.dy) * connectionRatio);
+      // _marriagePoints[marriageKey] = Offset(
+      //     husbandOffset.dx +
+      //         (wifeOffset.dx - husbandOffset.dx) * connectionRatio,
+      //     husbandOffset.dy +
+      //         (wifeOffset.dy - husbandOffset.dy) * connectionRatio);
+      final gapWife = controller.spacing / 2;
+      _marriagePoints[marriageKey] = Offset(wifeOffset.dx - gapWife,
+          husbandOffset.dy + (wifeOffset.dy - husbandOffset.dy) * connectionRatio);
     }
   }
 
@@ -181,8 +181,7 @@ class GenogramEdgePainter<E> extends CustomPainter {
 
       if (fatherId != null) {
         try {
-          father = nodes.firstWhere(
-              (node) => controller.idProvider(node.data) == fatherId);
+          father = nodes.firstWhere((node) => controller.idProvider(node.data) == fatherId);
         } catch (_) {
           father = null;
         }
@@ -190,18 +189,17 @@ class GenogramEdgePainter<E> extends CustomPainter {
 
       if (motherId != null) {
         try {
-          mother = nodes.firstWhere(
-              (node) => controller.idProvider(node.data) == motherId);
+          mother = nodes.firstWhere((node) => controller.idProvider(node.data) == motherId);
         } catch (_) {
           mother = null;
         }
       }
 
       // Get connection point on child
-      final Offset childConn = _getConnectionPoint(
-          child, ConnectionPoint.top); // Special case for married female
-      final bool isMarriedFemale = controller.isFemale(child.data) &&
-          controller.getSpouseList(child.data).isNotEmpty;
+      final Offset childConn =
+          _getConnectionPoint(child, ConnectionPoint.top); // Special case for married female
+      final bool isMarriedFemale =
+          controller.isFemale(child.data) && controller.getSpouseList(child.data).isNotEmpty;
 
       // Different cases of parent-child connections
       if (father != null && mother != null) {
@@ -212,8 +210,7 @@ class GenogramEdgePainter<E> extends CustomPainter {
         if (_marriagePoints.containsKey(marriageKey)) {
           // Draw from marriage point to child
           final Offset marriagePoint = _marriagePoints[marriageKey]!;
-          final Color marriageColor =
-              _marriageColors[marriageKey] ?? Colors.grey;
+          final Color marriageColor = _marriageColors[marriageKey] ?? Colors.grey;
 
           // Create parent-child paint from the configuration
           final Paint connectionPaint = Paint()
@@ -222,12 +219,11 @@ class GenogramEdgePainter<E> extends CustomPainter {
             ..style = PaintingStyle.stroke;
 
           // Use two-segment connection for married females, genogramParentChild for others
-          final connectionType = isMarriedFemale
-              ? ConnectionType.twoSegment
-              : ConnectionType.genogramParentChild;
+          final connectionType =
+              isMarriedFemale ? ConnectionType.twoSegment : ConnectionType.genogramParentChild;
 
-          utils.drawConnection(canvas, marriagePoint, childConn,
-              controller.boxSize, controller.orientation,
+          utils.drawConnection(
+              canvas, marriagePoint, childConn, controller.boxSize, controller.orientation,
               type: connectionType, paint: connectionPaint);
         } else {
           // Parents aren't married - draw connections from both parents
@@ -252,15 +248,13 @@ class GenogramEdgePainter<E> extends CustomPainter {
       ..strokeWidth = config.childSingleParentStrokeWidth
       ..style = PaintingStyle.stroke;
 
-    final Offset parentConn =
-        _getConnectionPoint(parent, ConnectionPoint.bottom);
+    final Offset parentConn = _getConnectionPoint(parent, ConnectionPoint.bottom);
     final Offset childConn = _getConnectionPoint(child, ConnectionPoint.top);
 
     final connectionType =
         isMarriedFemale ? ConnectionType.twoSegment : ConnectionType.threeSegment;
 
-    utils.drawConnection(canvas, parentConn, childConn, controller.boxSize,
-        controller.orientation,
+    utils.drawConnection(canvas, parentConn, childConn, controller.boxSize, controller.orientation,
         type: connectionType, paint: parentPaint);
   }
 
@@ -270,16 +264,13 @@ class GenogramEdgePainter<E> extends CustomPainter {
       case ConnectionPoint.top:
         return node.position + Offset(controller.boxSize.width / 2, 0);
       case ConnectionPoint.right:
-        return node.position +
-            Offset(controller.boxSize.width, controller.boxSize.height / 2);
+        return node.position + Offset(controller.boxSize.width, controller.boxSize.height / 2);
       case ConnectionPoint.bottom:
-        return node.position +
-            Offset(controller.boxSize.width / 2, controller.boxSize.height);
+        return node.position + Offset(controller.boxSize.width / 2, controller.boxSize.height);
       case ConnectionPoint.left:
         return node.position + Offset(0, controller.boxSize.height / 2);
       case ConnectionPoint.center:
-        return node.position +
-            Offset(controller.boxSize.width / 2, controller.boxSize.height / 2);
+        return node.position + Offset(controller.boxSize.width / 2, controller.boxSize.height / 2);
     }
   }
 
