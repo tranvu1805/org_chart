@@ -440,7 +440,10 @@ class GenogramController<E> extends BaseGraphController<E> {
         childrenTotalSize += subtreeSize;
 
         // Move the next child's position, adding extra spacing
-        childPos += subtreeSize + spacing * 1;
+        // childPos += subtreeSize + spacing * 1.5;
+
+        // Move the next child's position, adding spacing
+        childPos += subtreeSize + spacing;
       }
 
       // Calculate true children size by removing the extra spacing after the last child

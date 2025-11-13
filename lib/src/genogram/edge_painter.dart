@@ -33,6 +33,7 @@ class GenogramEdgePainter<E> extends CustomPainter {
 
   /// Function to get marriage status for a relationship (defaults to married)
   final MarriageStatus Function(E person, E spouse)? marriageStatusProvider;
+
   // Maps to track marriage connections
   final Map<String, Color> _marriageColors = {};
   final Map<String, Offset> _marriagePoints = {};
@@ -205,41 +206,43 @@ class GenogramEdgePainter<E> extends CustomPainter {
           controller.isFemale(child.data) && controller.getSpouseList(child.data).isNotEmpty;
 
       // Different cases of parent-child connections
-      if (father != null && mother != null) {
-        // Both parents present - try to find their marriage connection
-        final String marriageKey =
-            '${controller.idProvider(father.data)}|${controller.idProvider(mother.data)}';
-
-        if (_marriagePoints.containsKey(marriageKey)) {
-          // Draw from marriage point to child
-          final Offset marriagePoint = _marriagePoints[marriageKey]!;
-          final Color marriageColor = _marriageColors[marriageKey] ?? Colors.grey;
-
-          // Create parent-child paint from the configuration
-          final Paint connectionPaint = Paint()
-            ..color = marriageColor
-            ..strokeWidth = config.childStrokeWidth
-            ..style = PaintingStyle.stroke;
-
-          // Use two-segment connection for married females, genogramParentChild for others
-          final connectionType =
-              isMarriedFemale ? ConnectionType.twoSegment : ConnectionType.genogramParentChild;
-
-          utils.drawConnection(
-              canvas, marriagePoint, childConn, controller.boxSize, controller.orientation,
-              type: connectionType, paint: connectionPaint);
-        } else {
-          // Parents aren't married - draw connections from both parents
-          _drawSingleParentConnection(canvas, father, child, isMarriedFemale);
-          _drawSingleParentConnection(canvas, mother, child, isMarriedFemale);
-        }
-      } else if (father != null) {
+      // if (father != null && mother != null) {
+      //   // Both parents present - try to find their marriage connection
+      //   final String marriageKey =
+      //       '${controller.idProvider(father.data)}|${controller.idProvider(mother.data)}';
+      //
+      //   if (_marriagePoints.containsKey(marriageKey)) {
+      //     // Draw from marriage point to child
+      //     final Offset marriagePoint = _marriagePoints[marriageKey]!;
+      //     final Color marriageColor = _marriageColors[marriageKey] ?? Colors.grey;
+      //
+      //     // Create parent-child paint from the configuration
+      //     final Paint connectionPaint = Paint()
+      //       ..color = marriageColor
+      //       ..strokeWidth = config.childStrokeWidth
+      //       ..style = PaintingStyle.stroke;
+      //
+      //     // Use two-segment connection for married females, genogramParentChild for others
+      //     final connectionType =
+      //         isMarriedFemale ? ConnectionType.twoSegment : ConnectionType.genogramParentChild;
+      //
+      //     utils.drawConnection(
+      //         canvas, marriagePoint, childConn, controller.boxSize, controller.orientation,
+      //         type: connectionType, paint: connectionPaint);
+      //   } else {
+      //     // Parents aren't married - draw connections from both parents
+      //     _drawSingleParentConnection(canvas, father, child, isMarriedFemale);
+      //     _drawSingleParentConnection(canvas, mother, child, isMarriedFemale);
+      //   }
+      // } else
+      if (father != null) {
         // Father only
         _drawSingleParentConnection(canvas, father, child, isMarriedFemale);
-      } else if (mother != null) {
-        // Mother only
-        _drawSingleParentConnection(canvas, mother, child, isMarriedFemale);
       }
+      //   else if (mother != null) {
+      //   // Mother only
+      //   _drawSingleParentConnection(canvas, mother, child, isMarriedFemale);
+      // }
     }
   }
 
