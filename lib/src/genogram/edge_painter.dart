@@ -82,28 +82,45 @@ class GenogramEdgePainter<E> extends CustomPainter {
 
       // Only process marriages from males to avoid duplication
       if (!controller.isMale(person.data)) continue;
+      // spouse cuối cùng
+      final String spouseId = spouses.last;
 
-      for (int i = 0; i < spouses.length; i++) {
-        final String spouseId = spouses[i];
-
-        // Find spouse node
-        Node<E>? spouse;
-        try {
-          spouse = nodes.firstWhere(
-            (node) => controller.idProvider(node.data) == spouseId,
-          );
-        } catch (_) {
-          continue; // Spouse not found
-        }
-
-        // Add to marriages collection
-        marriages.add({
-          'husband': person,
-          'wife': spouse,
-          'spouseIndex': i,
-          'marriageKey': '$personId|$spouseId',
-        });
+      Node<E>? spouse;
+      try {
+        spouse = nodes.firstWhere(
+          (node) => controller.idProvider(node.data) == spouseId,
+        );
+      } catch (_) {
+        continue;
       }
+
+      // chỉ thêm 1 marriage duy nhất
+      marriages.add({
+        'husband': person,
+        'wife': spouse,
+        'marriageKey': '$personId|$spouseId',
+      });
+      // for (int i = 0; i < spouses.length; i++) {
+      //   final String spouseId = spouses[i];
+      //
+      //   // Find spouse node
+      //   Node<E>? spouse;
+      //   try {
+      //     spouse = nodes.firstWhere(
+      //       (node) => controller.idProvider(node.data) == spouseId,
+      //     );
+      //   } catch (_) {
+      //     continue; // Spouse not found
+      //   }
+      //
+      //   // Add to marriages collection
+      //   marriages.add({
+      //     'husband': person,
+      //     'wife': spouse,
+      //     'spouseIndex': i,
+      //     'marriageKey': '$personId|$spouseId',
+      //   });
+      // }
     }
 
     // Sort marriages to ensure consistent color assignment
@@ -114,7 +131,7 @@ class GenogramEdgePainter<E> extends CustomPainter {
       final marriage = marriages[i];
       final Node<E> husband = marriage['husband'];
       final Node<E> wife = marriage['wife'];
-      final int spouseIndex = marriage['spouseIndex'];
+      // final int spouseIndex = marriage['spouseIndex'];
       final String marriageKey = marriage['marriageKey']; // Assign color
       final Color marriageColor = config.marriageColors[i % config.marriageColors.length];
       _marriageColors[marriageKey] = marriageColor;
@@ -124,12 +141,16 @@ class GenogramEdgePainter<E> extends CustomPainter {
       final Offset wifeConn = _getConnectionPoint(wife, ConnectionPoint.left);
 
       // Apply offset for multiple marriages
-      final double offset = -5.0 * spouseIndex;
+      // final double offset = -5.0 * spouseIndex;
+      final double offset = -5.0;
       final Offset husbandOffset, wifeOffset;
 
       if (controller.orientation == GraphOrientation.topToBottom) {
-        husbandOffset = husbandConn.translate(0, offset);
-        wifeOffset = wifeConn.translate(0, offset);
+        // husbandOffset = husbandConn.translate(0, offset);
+        // wifeOffset = wifeConn.translate(0, offset);
+        //Don't translate Y axis for topToBottom orientation to overlapping lines
+        husbandOffset = husbandConn;
+        wifeOffset = wifeConn;
       } else {
         husbandOffset = husbandConn.translate(offset, 0);
         wifeOffset = wifeConn.translate(offset, 0);
@@ -153,7 +174,8 @@ class GenogramEdgePainter<E> extends CustomPainter {
           marriagePaint); // Calculate connection point based on spouse index
       // For first spouse (index 0): use midpoint (ratio 0.5)
       // For additional spouses: move closer to wife (ratio > 0.5)
-      double connectionRatio = spouseIndex == 0 ? 0.5 : 0.9;
+      // double connectionRatio = spouseIndex == 0 ? 0.5 : 0.9;
+      double connectionRatio = 0.5;
 
       ///older version:
       // Store the weighted point for child connections
